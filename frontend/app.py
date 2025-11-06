@@ -3,6 +3,20 @@ import pandas as pd
 import datetime
 import requests
 
+from style import load_custom_css
+
+# Gọi CSS toàn cục
+load_custom_css()
+
+# Ghi đè lại hàm st.set_page_config để luôn tải CSS
+original_set_page_config = st.set_page_config
+
+def custom_set_page_config(*args, **kwargs):
+    load_custom_css()
+    original_set_page_config(*args, **kwargs)
+
+st.set_page_config = custom_set_page_config
+
 # ===============================
 # ⚙️ Cấu hình trang
 # ===============================
