@@ -29,7 +29,7 @@ API_BASE = "http://127.0.0.1:8000"  # URL backend FastAPI
 # ===============================
 if "access_token" not in st.session_state or not st.session_state["access_token"]:
     st.warning("🔒 Bạn cần đăng nhập để truy cập hệ thống.")
-    st.page_link("pages/2_Đăng nhập.py", label="➡️ Quay lại trang đăng nhập", icon="🔑")
+    st.page_link("pages/2_Login.py", label="➡️ Quay lại trang đăng nhập", icon="🔑")
     st.stop()
 
 TOKEN = st.session_state["access_token"]
@@ -49,7 +49,7 @@ if st.sidebar.button("🚪 Đăng xuất"):
         del st.session_state[key]
     st.success("✅ Đã đăng xuất thành công!")
     time.sleep(4)
-    st.switch_page("2_Đăng nhập.py")
+    st.switch_page("pages/2_Login.py")
 
 # ===============================
 # 🔧 HÀM GỌI API
@@ -279,11 +279,19 @@ elif menu == "Danh sách giao dịch":
                     st.rerun()
 
                 if cols[6].button("❌", key=f"delete_{i}_{row['type']}"):
-                    delete_transaction(
-                        row.get("id") or row.get("income_id") or row.get("expense_id"),
-                        row["type"]
-                    )
-                    st.rerun()
+                    # Lấy ID từ các cột có thể có
+                    raw_id = row.get("id") or row.get("income_id") or row.get("expense_id")
+
+                    # Kiểm tra ID hợp lệ
+                    if pd.notna(raw_id):
+                        try:
+                            delete_transaction(int(raw_id), row["type"])
+                            st.success("🗑️ Đã xóa thành công.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"❌ Lỗi khi xóa: {e}")
+                    else:
+                        st.warning("⚠️ Không thể xóa: ID bị thiếu hoặc không hợp lệ.")
 
         # ====== FORM SỬA ======
         if st.session_state.get("edit_id"):

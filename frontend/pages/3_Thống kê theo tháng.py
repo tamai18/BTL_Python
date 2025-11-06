@@ -1,5 +1,3 @@
-import sys, os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import streamlit as st
 from streamlit_option_menu import option_menu
 import plotly.express as px
@@ -9,33 +7,20 @@ import requests
 from frontend.style import load_custom_css
 
 load_custom_css()
-# --- 1. CẤU HÌNH TRANG ---
+#-- 1. CẤU HÌNH TRANG ---
 st.set_page_config(
     layout="wide",
     page_title="Tổng quan tháng",
     initial_sidebar_state="expanded"  # Sidebar luôn mở
 )
 
-
-# --- 3. KIỂM TRA ĐĂNG NHẬP VÀ API (Giữ nguyên) ---
-
-# if "logged_in" not in st.session_state or not st.session_state["logged_in"]:
-#     st.warning("🔒 Bạn cần đăng nhập để truy cập hệ thống.")
-#     st.page_link("pages/2_Đăng nhập.py", label="➡️ Đăng nhập ngay", icon="🔑")
-#     st.stop()
-#
-# user_id = st.session_state["user_id"]
-# st.sidebar.success(f"👋 Xin chào, {st.session_state['username']}!")
-# if st.sidebar.button("🚪 Đăng xuất"):
-#     st.session_state.clear()
-#     st.switch_page("pages/2_Đăng nhập.py")
-
+# --- 3. KIỂM TRA ĐĂNG NHẬP VÀ API ---
 BACKEND_URL = "http://127.0.0.1:8000"
 
 if 'access_token' not in st.session_state or not st.session_state['access_token']:
-     st.error("Bạn phải đăng nhập để xem trang này.")
-     st.warning("Vui lòng quay lại 'homepage' để đăng nhập.")
-     st.stop()
+    st.error("Bạn phải đăng nhập để xem trang này.")
+    st.warning("Vui lòng quay lại 'app' để đăng nhập.")
+    st.stop()
 
 TOKEN = st.session_state['access_token']
 USER_ID = st.session_state['user_id']
@@ -61,7 +46,6 @@ def fetch_data(endpoint: str) -> pd.DataFrame:
         st.error(f"Lỗi kết nối đến backend:{e}")
     return pd.DataFrame()
 
-
 @st.cache_data(ttl=300)
 def fetch_budget_data(endpoint: str) -> pd.DataFrame:
     full_url = f"{BACKEND_URL}{endpoint}"
@@ -82,8 +66,7 @@ def fetch_budget_data(endpoint: str) -> pd.DataFrame:
     return pd.DataFrame()
 
 
-# --- 4. TẢI DỮ LIỆU (Giữ nguyên) ---
-# ... (Giữ nguyên 4 khối code tải income_data_raw, expense_data_raw và xử lý ngày) ...
+# --- 4. TẢI DỮ LIỆU  ---
 # du lieu thu nhap
 income_data_raw = fetch_data(f"/incomes/{USER_ID}")
 if not income_data_raw.empty:
@@ -100,7 +83,7 @@ else:
         "Thu nhập (VND)": pd.Series(dtype='float')
     })
     st.info("Chưa có dữ liệu thu nhập.")
-# Phần này định nghĩa expense_data (đừng xóa)
+# Phần này định nghĩa expense_data
 expense_data_raw = fetch_data(f"/expense/{USER_ID}")
 if not expense_data_raw.empty:
     expense_data = expense_data_raw.rename(columns={
@@ -127,7 +110,7 @@ this_month_start = today.replace(day=1)
 selected = option_menu(
     menu_title=None,
     options=["Danh mục thu nhập", "Danh mục chi tiêu", "Phần trăm ngân sách"],
-    icons=["cash-coin", "currency-dollar", "graph-up-arrow"],  # Icons đẹp hơn
+    icons=["cash-coin", "currency-dollar", "graph-up-arrow"],  # Icons
     menu_icon="cast",
     default_index=0,
     orientation="horizontal",
@@ -175,7 +158,7 @@ if selected == "Danh mục thu nhập":
     fig.update_traces(textinfo="percent+label", textfont_size=16)
     st.plotly_chart(fig, use_container_width=True)
 
-# --- SỬA LẠI TAB NÀY ---
+# --- Chi tiêu ---
 elif selected == "Danh mục chi tiêu":
     total_today = expense_data.loc[expense_data["Ngày"].dt.date == today, "Chi tiêu (VND)"].sum()
     total_week = expense_data.loc[expense_data["Ngày"].dt.date >= this_week_start, "Chi tiêu (VND)"].sum()
@@ -184,7 +167,6 @@ elif selected == "Danh mục chi tiêu":
     st.subheader("Tổng chi tiêu")
     col1, col2, col3 = st.columns(3)
 
-    # SỬA LẠI: Dùng class CSS, bỏ style gõ tay
     col1.markdown(
         f"""
         <div class='metric-box metric-today'>
@@ -213,7 +195,7 @@ elif selected == "Danh mục chi tiêu":
         unsafe_allow_html=True
     )
 
-    # Biểu đồ (giữ nguyên)
+    # Biểu đồ
     month_expense = expense_data[expense_data["Ngày"].dt.date >= this_month_start]
     category_summary = month_expense.groupby("Danh mục")["Chi tiêu (VND)"].sum().reset_index()
 
@@ -228,7 +210,7 @@ elif selected == "Danh mục chi tiêu":
     fig.update_traces(textinfo="percent+label", textfont_size=14)
     st.plotly_chart(fig, use_container_width=True)
 
-# --- TAB NGÂN SÁCH (Giữ nguyên) ---
+# --- TAB NGÂN SÁCH ---
 elif selected == "Phần trăm ngân sách":
     st.subheader("Chọn kỳ xem ngân sách")
 

@@ -1,7 +1,5 @@
-import sys, os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 import streamlit as st
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import plotly.express as px
 import requests
@@ -14,12 +12,11 @@ st.set_page_config(layout="wide")
 # địa chỉ API backend
 BACKEND_URL = "http://127.0.0.1:8000"
 
-
-#--- BỔ SUNG: KIỂM TRA ĐĂNG NHẬP ---
+# --- KIỂM TRA ĐĂNG NHẬP ---
 if 'access_token' not in st.session_state or not st.session_state['access_token']:
-     st.error("Bạn phải đăng nhập để xem trang này.")
-     st.warning("Vui lòng quay lại 'homepage' để đăng nhập.")
-     st.stop()
+    st.error("Bạn phải đăng nhập để xem trang này.")
+    st.warning("Vui lòng quay lại 'homepage' để đăng nhập.")
+    st.stop()
 
 # Lấy thông tin xác thực
 TOKEN = st.session_state['access_token']
@@ -27,7 +24,7 @@ USER_ID = st.session_state['user_id']
 AUTH_HEADERS = {'Authorization': f'Bearer {TOKEN}'}
 
 
-# --- BỔ SUNG: HÀM GỌI API ---
+# --- HÀM GỌI API ---
 @st.cache_data(ttl=300)
 def fetch_data(endpoint: str) -> pd.DataFrame:
     """Hàm chung để gọi API và trả về DataFrame."""
@@ -50,7 +47,7 @@ def fetch_data(endpoint: str) -> pd.DataFrame:
     return pd.DataFrame()
 
 
-# --- Menu chính (Giữ nguyên) ---
+# --- Menu chính ---
 selected = option_menu(
     menu_title=None,
     options=["Thu nhập", "Chi tiêu"],
@@ -78,7 +75,6 @@ selected = option_menu(
     },
 )
 
-# --- THAY THẾ DỮ LIỆU MẪU ---
 # Lấy dữ liệu thu nhập từ API
 income_data_raw = fetch_data(f"/incomes/{USER_ID}")
 if not income_data_raw.empty:
@@ -153,10 +149,9 @@ def chi_tieu_theo_thang(df, nam):
     return monthly_full
 
 
-# --- THAY THẾ BỘ CHỌN NĂM ---
-# Thay vì gõ cứng `nam_chon=2025`, chúng ta tạo bộ lọc
+# --- CHỌN NĂM ---
 current_year = datetime.now().year
-# Tạo danh sách các năm, ví dụ 2 năm trước và 2 năm sau
+# Tạo danh sách các năm
 year_list = list(range(current_year - 2, current_year + 3))
 
 nam_chon = st.selectbox(
@@ -166,7 +161,7 @@ nam_chon = st.selectbox(
 )
 st.divider()
 
-# --- Logic vẽ biểu đồ (Giữ nguyên) ---
+# --- Logic vẽ biểu đồ ---
 if selected == "Thu nhập":
 
     monthly_income = thu_nhap_theo_thang(income_data, nam_chon)
