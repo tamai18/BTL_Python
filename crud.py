@@ -367,7 +367,7 @@ def update_expense(db: Session, expense_id: int, category_name: str, amount: flo
 
     category = db.query(Category).filter(
         func.lower(Category.name) == category_name.lower(),
-        Category.type == CategoryType.income).first()
+        Category.type == CategoryType.expense).first()
 
     if not category:
         category = Category(
@@ -394,7 +394,7 @@ def update_expense(db: Session, expense_id: int, category_name: str, amount: flo
     db.refresh(expense)
 
     return {
-        "message": "✅ Cập nhật khoản thu thành công!",
+        "message": "✅ Cập nhật khoản chi thành công!",
         "expense_id": expense.expense_id,
         "category_id": category.category_id,
         "category_name": category.name,
@@ -602,7 +602,8 @@ def check_budget_exceeded(db: Session, user_id: int, category_id: int, year: int
         "message": f"✅ Bạn còn {remaining:,.0f}₫ trong ngân sách {category_name} tháng {month:02d}/{year}."
     }
 
-def get_budget_summary_for_month(db: Session, user_id:int, year: int, month: int):
+
+def get_budget_summary_for_month(db: Session, user_id: int, year: int, month: int):
     if not (1 <= month <= 12):
         return {"error": "⚠️ Tháng không hợp lệ! Vui lòng nhập giá trị từ 1 đến 12."}
     if year <= 0:
@@ -610,18 +611,19 @@ def get_budget_summary_for_month(db: Session, user_id:int, year: int, month: int
 
     start_date = date(year, month, 1)
     if month == 12:
-        end_date = date(year+1, 1, 1)
+        end_date = date(year + 1, 1, 1)
     else:
-        end_date = date(year, month+1, 1)
+        end_date = date(year, month + 1, 1)
     month_str = f"{year}-{month:02d}"
 
-    categories = (
-        db.query(Category).filter(Category.type == CategoryType.expense).all()
-    )
+    # Lấy TẤT CẢ category
+    categories = db.query(Category).filter(Category.type == CategoryType.expense).all()
 
     kq = []
     for category in categories:
         category_name = category.name
+
+        # Lấy tổng chi tiêu
         total_expense = (
                 db.query(func.sum(Expense.amount))
                 .filter(
@@ -630,20 +632,22 @@ def get_budget_summary_for_month(db: Session, user_id:int, year: int, month: int
                     Expense.date >= start_date,
                     Expense.date < end_date,
                 )
-                .scalar()  # để lấy giá trị duy nhất
-                or 0
+                .scalar() or 0
         )
+
+        # Lấy ngân sách
         budget = (
             db.query(Budget)
             .filter(
-            Budget.user_id == user_id,
-            Budget.category_id == category.category_id,
-            Budget.month == month_str
-        )
-        .first()
+                Budget.user_id == user_id,
+                Budget.category_id == category.category_id,
+                Budget.month == month_str
+            )
+            .first()
         )
 
-        if not budget or total_expense == 0:
+        # Chỉ thêm vào kết quả NẾU có ngân sách HOẶC có chi tiêu
+        if not budget and total_expense == 0:
             continue
 
         if not budget:
@@ -655,7 +659,8 @@ def get_budget_summary_for_month(db: Session, user_id:int, year: int, month: int
                 "trang_thai": "⚠️ Chưa đặt ngân sách",
                 "Canh_bao": False
             })
-            continue     # bỏ qua phần phía dưới
+            continue
+
         if total_expense > budget.amount:
             over = total_expense - budget.amount
             kq.append({
@@ -663,7 +668,6 @@ def get_budget_summary_for_month(db: Session, user_id:int, year: int, month: int
                 "category_name": category_name,
                 "budget": budget.amount,
                 "expense": total_expense,
-                "exceeded": over,
                 "trang_thai": f"🚨 Vượt ngân sách {over:,.0f}₫",
                 "Canh_bao": True
             })
@@ -674,10 +678,10 @@ def get_budget_summary_for_month(db: Session, user_id:int, year: int, month: int
                 "category_name": category_name,
                 "budget": budget.amount,
                 "expense": total_expense,
-                "exceeded": remaining,
                 "trang_thai": f"✅ Còn lại {remaining:,.0f}₫",
                 "Canh_bao": False
             })
+
     if not kq:
         return {"message": "⚠️ Không tìm thấy danh mục nào có dữ liệu ngân sách hoặc chi tiêu."}
     return kq

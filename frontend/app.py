@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import datetime
 import requests
+import time
 
 from style import load_custom_css
 
@@ -28,7 +29,7 @@ API_BASE = "http://127.0.0.1:8000"  # URL backend FastAPI
 # ===============================
 if "access_token" not in st.session_state or not st.session_state["access_token"]:
     st.warning("🔒 Bạn cần đăng nhập để truy cập hệ thống.")
-    st.page_link("pages/2_auth.py", label="➡️ Quay lại trang đăng nhập", icon="🔑")
+    st.page_link("pages/2_Đăng nhập.py", label="➡️ Quay lại trang đăng nhập", icon="🔑")
     st.stop()
 
 TOKEN = st.session_state["access_token"]
@@ -47,7 +48,8 @@ if st.sidebar.button("🚪 Đăng xuất"):
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.success("✅ Đã đăng xuất thành công!")
-    st.switch_page("auth.py")
+    time.sleep(4)
+    st.switch_page("2_Đăng nhập.py")
 
 # ===============================
 # 🔧 HÀM GỌI API
@@ -71,6 +73,7 @@ def fetch_transactions():
 
     except Exception as e:
         st.error(f"❌ Lỗi khi tải dữ liệu: {e}")
+        time.sleep(6)
         return []
 
 
@@ -88,10 +91,13 @@ def add_transaction(type_, category, amount, note, date_):
         res = requests.post(url, json=payload, headers=AUTH_HEADERS)
         if res.status_code == 200:
             st.success("✅ Giao dịch đã được thêm thành công!")
+            time.sleep(4)
         else:
             st.error(f"❌ Lỗi khi thêm: {res.text}")
+            time.sleep(6)
     except Exception as e:
         st.error(f"⚠️ Lỗi kết nối: {e}")
+        time.sleep(6)
 
 
 def update_transaction(id_, type_, category, amount, note, date_):
@@ -108,14 +114,17 @@ def update_transaction(id_, type_, category, amount, note, date_):
         res = requests.put(url, json=payload, headers=AUTH_HEADERS)
         if res.status_code == 200:
             st.success("✅ Đã cập nhật giao dịch!")
+            time.sleep(5)
         else:
             try:
                 detail = res.json().get("detail", res.text)
             except:
                 detail = res.text
             st.error(f"❌ Lỗi cập nhật: {detail}")
+            time.sleep(6)
     except Exception as e:
         st.error(f"⚠️ Lỗi kết nối: {e}")
+        time.sleep(6)
 
 
 def delete_transaction(id_, type_):
@@ -126,10 +135,13 @@ def delete_transaction(id_, type_):
         res = requests.delete(url, headers=AUTH_HEADERS)
         if res.status_code == 200:
             st.success("🗑️ Đã xóa giao dịch!")
+            time.sleep(5)
         else:
             st.error(f"❌ Không thể xóa: {res.text}")
+            time.sleep(6)
     except Exception as e:
         st.error(f"⚠️ Lỗi khi xóa: {e}")
+        time.sleep(6)
 
 # ===============================
 # 🧭 Giao diện chính
@@ -179,6 +191,7 @@ if menu == "Thêm giao dịch":
         if submit:
             if amount == 0.0:
                 st.warning("⚠️ Vui lòng nhập số tiền hợp lệ!")
+                time.sleep(4)
             else:
                 add_transaction(st.session_state["mode"], category, amount, note, date_)
                 st.rerun()
@@ -207,6 +220,7 @@ elif menu == "Danh sách giao dịch":
 
             if start_date > end_date:
                 st.error("⚠️ Ngày bắt đầu phải trước hoặc bằng ngày kết thúc!")
+                time.sleep(4)
                 filtered_data = pd.DataFrame()
             else:
                 filtered_data = filtered_data[
@@ -224,6 +238,7 @@ elif menu == "Danh sách giao dịch":
 
         if filtered_data.empty:
             st.warning("❌ Không tìm thấy giao dịch nào phù hợp!")
+            time.sleep(5)
         else:
             total_income = filtered_data.query("type == 'Thu nhập'")["amount"].sum()
             total_expense = filtered_data.query("type == 'Chi tiêu'")["amount"].sum()

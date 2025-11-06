@@ -1,5 +1,4 @@
 import time
-
 import streamlit as st
 import pandas as pd
 import datetime
@@ -13,14 +12,14 @@ st.title("📊 Quản lý Ngân sách Chi tiêu")
 # ====== KIỂM TRA ĐĂNG NHẬP ======
 if "logged_in" not in st.session_state or not st.session_state["logged_in"]:
     st.warning("🔒 Bạn cần đăng nhập để truy cập hệ thống.")
-    st.page_link("pages/2_auth.py", label="➡️ Đăng nhập ngay", icon="🔑")
+    st.page_link("pages/2_Đăng nhập.py", label="➡️ Đăng nhập ngay", icon="🔑")
     st.stop()
 
 user_id = st.session_state["user_id"]
 st.sidebar.success(f"👋 Xin chào, {st.session_state['username']}!")
 if st.sidebar.button("🚪 Đăng xuất"):
     st.session_state.clear()
-    st.switch_page("pages/2_auth.py")
+    st.switch_page("pages/2_Đăng nhập.py")
 
 # ====== HÀM GỌI API ======
 def get_budgets(user_id, month):
@@ -84,6 +83,7 @@ if menu == "Thêm ngân sách":
         if submitted:
             res = add_budget(user_id, month, category_id, amount)
             st.success(res["message"])
+            time.sleep(5)
             st.rerun()
 
 # ====== DANH SÁCH NGÂN SÁCH ======
